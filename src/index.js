@@ -1,8 +1,9 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join, resolve, dirname } from 'node:path';
+import { join, dirname } from 'node:path';
 import { execSync } from 'node:child_process';
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
+import { MARKER, buildBootstrap, buildNewAppDts, processAppDts } from './shared.js';
 
 const POLYFILLS = {
 	official: {
@@ -16,8 +17,6 @@ const POLYFILLS = {
 		hint: 'Smaller alternative (~40KB gzipped) by Adam Shaw, same API surface'
 	}
 };
-
-const MARKER = '// sveltekit-temporal: managed block';
 
 export async function run() {
 	console.log();
@@ -190,41 +189,6 @@ function installCommand(pm, pkg) {
 	}
 }
 
-// ─── File generation ────────────────────────────────────────────────────────
-
-function buildBootstrap(pkgName, isTypeScript) {
-	const tsLine1 = isTypeScript ? `\t// @ts-expect-error - polyfilling globalThis\n` : '';
-	const tsLine2 = isTypeScript ? `\t// @ts-expect-error - patching Date.prototype\n` : '';
-
-	return `${MARKER}
-// Conditionally load the Temporal polyfill when the runtime lacks native support.
-// Native (Chrome 144+, Firefox 139+) keeps zero overhead — the dynamic import is
-// code-split by Vite and only fetched on browsers that need it.
-
-if (typeof globalThis.Temporal === 'undefined') {
-	const { Temporal, toTemporalInstant } = await import('${pkgName}');
-${tsLine1}\tglobalThis.Temporal = Temporal;
-${tsLine2}\tDate.prototype.toTemporalInstant = toTemporalInstant;
-}
-
-export {};
-`;
-}
-
-function buildAppDtsBlock(pkgName) {
-	return `${MARKER}
-import type { Temporal as TemporalNS } from '${pkgName}';
-
-declare global {
-	const Temporal: typeof TemporalNS;
-
-	interface Date {
-		toTemporalInstant(): TemporalNS.Instant;
-	}
-}
-// end sveltekit-temporal managed block`;
-}
-
 // ─── File writers (idempotent) ──────────────────────────────────────────────
 
 function writeManaged(path, contents, log) {
@@ -266,58 +230,22 @@ function ensureImportInFile(path, importLine, log) {
 }
 
 function updateAppDts(path, pkgName, log) {
-	const block = buildAppDtsBlock(pkgName);
-
 	if (!existsSync(path)) {
-		const stub = `// See https://svelte.dev/docs/kit/types#app.d.ts for information about these interfaces
-declare global {
-	namespace App {
-		// interface Error {}
-		// interface Locals {}
-		// interface PageData {}
-		// interface PageState {}
-		// interface Platform {}
-	}
-}
-
-${block}
-
-export {};
-`;
 		mkdirSync(dirname(path), { recursive: true });
-		writeFileSync(path, stub);
+		writeFileSync(path, buildNewAppDts(pkgName));
 		log.created.push(rel(path));
 		return;
 	}
 
 	const existing = readFileSync(path, 'utf8');
+	const result = processAppDts(existing, pkgName);
 
-	// Already has our managed block — replace it (handles polyfill switch)
-	if (existing.includes(MARKER)) {
-		const pattern = new RegExp(
-			`${escapeRegex(MARKER)}[\\s\\S]*?// end sveltekit-temporal managed block\\n?`,
-			'm'
-		);
-		const replaced = existing.replace(pattern, `${block}\n`);
-		if (replaced === existing) {
-			log.skipped.push(rel(path));
-		} else {
-			writeFileSync(path, replaced);
-			log.updated.push(rel(path));
-		}
+	if (result === false) {
+		log.skipped.push(rel(path));
 		return;
 	}
 
-	// No managed block yet — append before any trailing `export {}` if present,
-	// otherwise just append.
-	const exportMatch = existing.match(/\n\s*export\s*\{\s*\};?\s*$/);
-	let next;
-	if (exportMatch) {
-		next = existing.replace(exportMatch[0], `\n\n${block}\n${exportMatch[0]}`);
-	} else {
-		next = `${existing.trimEnd()}\n\n${block}\n\nexport {};\n`;
-	}
-	writeFileSync(path, next);
+	writeFileSync(path, result);
 	log.updated.push(rel(path));
 }
 
@@ -325,8 +253,4 @@ export {};
 
 function rel(absPath) {
 	return absPath.replace(process.cwd() + '/', '');
-}
-
-function escapeRegex(s) {
-	return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

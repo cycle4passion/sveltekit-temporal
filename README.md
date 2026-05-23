@@ -4,7 +4,20 @@ One-shot CLI that wires the Temporal API polyfill into a SvelteKit project, with
 
 ## Usage
 
+## Using with the Svelte CLI (`sv add`)
+
+If you prefer the official Svelte CLI, this package also works as an `sv` add-on:
+
 ```bash
+# Or when creating a new project
+npx sv create my-app
+cd my-app
+npx sv add sveltekit-temporal
+
+# Into an existing project
+npx sv add sveltekit-temporal
+
+#Alternatively, you can run the CLI directly
 npx sveltekit-temporal
 ```
 
@@ -59,18 +72,18 @@ export async function handle({ event, resolve }) {
 
 ## Runtime support
 
-| Runtime | Native Temporal | Notes |
-|---------|----------------|-------|
-| Node.js ≤ 25 | No | Polyfill required |
-| Node.js 26+ | Yes (behind `--experimental-temporal`) | Polyfill still safe to include — the conditional check skips loading it |
-| Bun | No | Polyfill required; Bun tracks V8 but has not shipped Temporal yet |
-| Deno | No | Polyfill required; Deno tracks V8 but has not shipped Temporal yet |
-| Chrome 144+ | Yes | Polyfill skipped automatically |
-| Firefox 139+ | Yes | Polyfill skipped automatically |
-| Safari | No | Polyfill required |
+| Runtime      | Native Temporal                        | Notes                                                                   |
+| ------------ | -------------------------------------- | ----------------------------------------------------------------------- |
+| Node.js ≤ 25 | No                                     | Polyfill required                                                       |
+| Node.js 26+  | Yes (behind `--experimental-temporal`) | Polyfill still safe to include — the conditional check skips loading it |
+| Bun          | No                                     | Polyfill required; Bun tracks V8 but has not shipped Temporal yet       |
+| Deno         | No                                     | Polyfill required; Deno tracks V8 but has not shipped Temporal yet      |
+| Chrome 144+  | Yes                                    | Polyfill skipped automatically                                          |
+| Firefox 139+ | Yes                                    | Polyfill skipped automatically                                          |
+| Safari       | No                                     | Polyfill required                                                       |
 
 The conditional bootstrap in `src/lib/temporal.ts` checks `typeof Temporal !== 'undefined'` before loading the polyfill, so upgrading your runtime later requires no code changes.
 
 ## Switching polyfills later
 
-Just re-run the CLI and pick the other option. Only the two files that name the package (`src/lib/temporal.*` and `src/app.d.ts`) will change.
+Re-run either the CLI or `sv add` and pick the other option. Only the two files that name the package (`src/lib/temporal.*` and `src/app.d.ts`) will change.
