@@ -1,6 +1,9 @@
 # sveltekit-temporal
 
+Think about it, temporal may be supported in big 3 wrosers soon, but your users may bit update for some time.
+
 One-shot CLI that wires the Temporal API polyfill into a SvelteKit project, with conditional loading so browsers that ship Temporal natively (Chrome 144+, Firefox 139+) and server runtimes that do too (Node.js 26+) pay zero bytes.
+
 
 ## Usage
 

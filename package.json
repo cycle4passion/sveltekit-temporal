@@ -1,26 +1,32 @@
 {
 	"name": "sveltekit-temporal",
 	"author": "Scott Rhamy",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"description": "Set up the Temporal API polyfill in a SvelteKit project with conditional loading on client and server.",
 	"type": "module",
 	"exports": {
-		".": "./src/index.js",
-		"./sv": "./src/addon.js"
+		".": "./dist/index.js",
+		"./sv": "./dist/addon.js"
 	},
 	"bin": {
 		"sveltekit-temporal": "bin/cli.js"
 	},
 	"files": [
 		"bin",
-		"src",
+		"dist",
 		"README.md"
 	],
+	"scripts": {
+		"build": "esbuild src/index.js --bundle --platform=node --format=esm --outfile=dist/index.js --external:node:* && esbuild src/addon.js --bundle --platform=node --format=esm --outfile=dist/addon.js --external:sv --external:node:*",
+		"prepublishOnly": "npm run build"
+	},
 	"engines": {
 		"node": ">=18"
 	},
-	"dependencies": {
+	"dependencies": {},
+	"devDependencies": {
 		"@clack/prompts": "^0.7.0",
+		"esbuild": "^0.25.0",
 		"picocolors": "^1.0.0"
 	},
 	"peerDependencies": {
