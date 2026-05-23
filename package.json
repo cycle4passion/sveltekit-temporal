@@ -1,0 +1,30 @@
+{
+	"name": "sveltekit-temporal",
+	"author": "Scott Rhamy",
+	"version": "0.1.0",
+	"description": "Set up the Temporal API polyfill in a SvelteKit project with conditional loading on client and server.",
+	"type": "module",
+	"bin": {
+		"sveltekit-temporal": "bin/cli.js"
+	},
+	"files": [
+		"bin",
+		"src",
+		"README.md"
+	],
+	"engines": {
+		"node": ">=18"
+	},
+	"dependencies": {
+		"@clack/prompts": "^0.7.0",
+		"picocolors": "^1.0.0"
+	},
+	"keywords": [
+		"svelte",
+		"sveltekit",
+		"temporal",
+		"polyfill",
+		"cli"
+	],
+	"license": "MIT"
+}
