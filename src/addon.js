@@ -5,7 +5,10 @@ const options = defineAddonOptions()
 	.add('polyfill', {
 		question: 'Which Temporal polyfill would you like to use?',
 		type: 'select',
-		options: ['@js-temporal/polyfill', 'temporal-polyfill'],
+		options: [
+			{ value: '@js-temporal/polyfill', label: '@js-temporal/polyfill', hint: 'Official TC39 polyfill, ~100KB gzipped, spec-conservative' },
+			{ value: 'temporal-polyfill', label: 'temporal-polyfill', hint: 'Smaller (~40KB gzipped) by Adam Shaw, same API surface' }
+		],
 		default: '@js-temporal/polyfill'
 	})
 	.build();
