@@ -43,7 +43,7 @@ export default defineAddon({
 		sv.file(`${directory.src}/hooks.server.${ext}`, (content) =>
 			content.includes("import '$lib/temporal'")
 				? false
-				: `import '$lib/temporal';\n${content}`
+				: `// import '$lib/temporal';\n${content}`
 		);
 
 		if (isTs) {
