@@ -1,23 +1,20 @@
 {
 	"name": "sveltekit-temporal",
 	"author": "Scott Rhamy",
-	"version": "0.8.0",
-	"description": "Set up the Temporal API polyfill in a SvelteKit project with conditional loading on client and server.",
+	"license": "MIT",
+	"version": "0.9.1",
+	"description": "sv add-on that wires the Temporal API polyfill into a SvelteKit project with conditional loading on client and server.",
 	"type": "module",
 	"exports": {
-		".": "./dist/index.js",
+		".": "./dist/addon.js",
 		"./sv": "./dist/addon.js"
 	},
-	"bin": {
-		"sveltekit-temporal": "bin/cli.js"
-	},
 	"files": [
-		"bin",
 		"dist",
 		"README.md"
 	],
 	"scripts": {
-		"build": "esbuild src/index.js --bundle --platform=node --format=esm --outfile=dist/index.js --external:node:* && esbuild src/addon.js --bundle --platform=node --format=esm --outfile=dist/addon.js --external:sv --external:node:*",
+		"build": "esbuild src/addon.js --bundle --platform=node --format=esm --outfile=dist/addon.js --external:sv --external:node:*",
 		"prepublishOnly": "npm run build"
 	},
 	"engines": {
@@ -25,25 +22,17 @@
 	},
 	"dependencies": {},
 	"devDependencies": {
-		"@clack/prompts": "^0.7.0",
-		"esbuild": "^0.25.0",
-		"picocolors": "^1.0.0"
+		"esbuild": "^0.25.0"
 	},
 	"peerDependencies": {
-		"sv": "*"
-	},
-	"peerDependenciesMeta": {
-		"sv": {
-			"optional": true
-		}
+		"sv": "^0.15.3"
 	},
 	"keywords": [
-		"svelte",
 		"sveltekit",
 		"temporal",
 		"polyfill",
-		"cli",
-		"sv-add"
-	],
-	"license": "MIT"
+		"sv-add",
+		"sv-create",
+		"sv"
+	]
 }

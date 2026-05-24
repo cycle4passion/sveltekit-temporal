@@ -1,13 +1,80 @@
 // src/addon.js
 import { defineAddon, defineAddonOptions } from "sv";
-
-// src/shared.js
 var MARKER = "// sveltekit-temporal: managed block";
 var END_MARKER = "// end sveltekit-temporal managed block";
-function buildBootstrap(pkgName, isTypeScript) {
-  const tsLine1 = isTypeScript ? `	// @ts-expect-error - polyfilling globalThis
+var options = defineAddonOptions().add("polyfill", {
+  question: "Which Temporal polyfill would you like to use?",
+  type: "select",
+  options: [
+    { value: "@js-temporal/polyfill", label: "@js-temporal/polyfill", hint: "Official TC39 polyfill, ~100KB gzipped, spec-conservative" },
+    { value: "temporal-polyfill", label: "temporal-polyfill", hint: "Smaller (~40KB gzipped) by Adam Shaw, same API surface" }
+  ],
+  default: "@js-temporal/polyfill"
+}).build();
+var addon_default = defineAddon({
+  id: "temporal",
+  shortDescription: "Temporal API polyfill with conditional loading for SvelteKit",
+  options,
+  setup({ isKit, unsupported }) {
+    if (!isKit) unsupported("Requires SvelteKit.");
+  },
+  run({ sv, options: options2, language, directory }) {
+    const pkgName = options2.polyfill;
+    const isTs = language === "ts";
+    const ext = language;
+    sv.devDependency(pkgName, "latest");
+    sv.file(`${directory.lib}/temporal.${ext}`, (content) => {
+      if (content && !content.includes(MARKER)) return false;
+      return buildBootstrap(pkgName, isTs);
+    });
+    sv.file(
+      `${directory.src}/hooks.${ext}`,
+      (content) => content.includes("import '$lib/temporal'") ? false : `import '$lib/temporal'; // allows Temporal from both client and server
+${content}`
+    );
+    sv.file(
+      `${directory.kitRoutes}/+page.svelte`,
+      (content) => content.trim() && !content.includes("Welcome to SvelteKit") ? false : buildDemoPage(isTs)
+    );
+    if (isTs) {
+      sv.file(
+        `${directory.src}/app.d.ts`,
+        (content) => content.trim() ? processAppDts(content, pkgName) : buildNewAppDts(pkgName)
+      );
+    }
+  },
+  nextSteps: () => ["Reference Temporal directly anywhere in your app \u2014 no imports needed."]
+});
+function buildDemoPage(isTs) {
+  const lang = isTs ? ` lang="ts"` : "";
+  return `<script${lang}>
+	import { onMount } from 'svelte';
+
+	let now = $state(Temporal.Now.zonedDateTimeISO());
+
+	onMount(() => {
+		const interval = setInterval(() => {
+			now = Temporal.Now.zonedDateTimeISO();
+		}, 1000);
+		return () => clearInterval(interval);
+	});
+
+	const zones = ['America/New_York', 'Europe/London', 'Asia/Tokyo'];
+</script>
+
+<h2>Right now, across time zones</h2>
+<ul>
+	<li><strong>Local ({now.timeZoneId})</strong>: {now.toPlainTime().toString().slice(0, 8)}</li>
+	{#each zones as zone}
+		<li><strong>{zone}</strong>: {now.withTimeZone(zone).toPlainTime().toString().slice(0, 8)}</li>
+	{/each}
+</ul>
+`;
+}
+function buildBootstrap(pkgName, isTs) {
+  const tsLine1 = isTs ? `	// @ts-expect-error - polyfilling globalThis
 ` : "";
-  const tsLine2 = isTypeScript ? `	// @ts-expect-error - patching Date.prototype
+  const tsLine2 = isTs ? `	// @ts-expect-error - patching Date.prototype
 ` : "";
   return `${MARKER}
 // Conditionally load the Temporal polyfill when the runtime lacks native support.
@@ -81,47 +148,6 @@ export {};
 function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
-
-// src/addon.js
-var options = defineAddonOptions().add("polyfill", {
-  question: "Which Temporal polyfill would you like to use?",
-  type: "select",
-  options: [
-    { value: "@js-temporal/polyfill", label: "@js-temporal/polyfill", hint: "Official TC39 polyfill, ~100KB gzipped, spec-conservative" },
-    { value: "temporal-polyfill", label: "temporal-polyfill", hint: "Smaller (~40KB gzipped) by Adam Shaw, same API surface" }
-  ],
-  default: "@js-temporal/polyfill"
-}).build();
-var addon_default = defineAddon({
-  id: "temporal",
-  shortDescription: "Temporal API polyfill with conditional loading for SvelteKit",
-  options,
-  setup({ isKit, unsupported }) {
-    if (!isKit) unsupported("Requires SvelteKit.");
-  },
-  run({ sv, options: options2, language, directory }) {
-    const pkgName = options2.polyfill;
-    const isTs = language === "ts";
-    const ext = language;
-    sv.devDependency(pkgName, "latest");
-    sv.file(`${directory.lib}/temporal.${ext}`, (content) => {
-      if (content && !content.includes(MARKER)) return false;
-      return buildBootstrap(pkgName, isTs);
-    });
-    sv.file(
-      `${directory.kitRoutes}/+layout.${ext}`,
-      (content) => content.includes("import '$lib/temporal'") ? false : `import '$lib/temporal';
-${content}`
-    );
-    if (isTs) {
-      sv.file(
-        `${directory.src}/app.d.ts`,
-        (content) => content.trim() ? processAppDts(content, pkgName) : buildNewAppDts(pkgName)
-      );
-    }
-  },
-  nextSteps: () => ["Reference Temporal directly anywhere in your app \u2014 no imports needed."]
-});
 export {
   addon_default as default
 };

@@ -1,5 +1,7 @@
 import { defineAddon, defineAddonOptions } from 'sv';
-import { MARKER, buildBootstrap, buildNewAppDts, processAppDts } from './shared.js';
+
+const MARKER = '// sveltekit-temporal: managed block';
+const END_MARKER = '// end sveltekit-temporal managed block';
 
 const options = defineAddonOptions()
 	.add('polyfill', {
@@ -34,10 +36,17 @@ export default defineAddon({
 			return buildBootstrap(pkgName, isTs);
 		});
 
-		sv.file(`${directory.kitRoutes}/+layout.${ext}`, (content) =>
+		sv.file(`${directory.src}/hooks.${ext}`, (content) =>
 			content.includes("import '$lib/temporal'")
 				? false
-				: `import '$lib/temporal';\n${content}`
+				: `import '$lib/temporal'; // allows Temporal from both client and server\n${content}`
+		);
+
+		// Only overwrite +page.svelte on a fresh sv create (default template or empty)
+		sv.file(`${directory.kitRoutes}/+page.svelte`, (content) =>
+			content.trim() && !content.includes('Welcome to SvelteKit')
+				? false
+				: buildDemoPage(isTs)
 		);
 
 		if (isTs) {
@@ -49,3 +58,104 @@ export default defineAddon({
 
 	nextSteps: () => ['Reference Temporal directly anywhere in your app — no imports needed.']
 });
+
+function buildDemoPage(isTs) {
+	const lang = isTs ? ` lang="ts"` : '';
+	return `<script${lang}>
+	import { onMount } from 'svelte';
+
+	let now = $state(Temporal.Now.zonedDateTimeISO());
+
+	onMount(() => {
+		const interval = setInterval(() => {
+			now = Temporal.Now.zonedDateTimeISO();
+		}, 1000);
+		return () => clearInterval(interval);
+	});
+
+	const zones = ['America/New_York', 'Europe/London', 'Asia/Tokyo'];
+</script>
+
+<h2>Right now, across time zones</h2>
+<ul>
+	<li><strong>Local ({now.timeZoneId})</strong>: {now.toPlainTime().toString().slice(0, 8)}</li>
+	{#each zones as zone}
+		<li><strong>{zone}</strong>: {now.withTimeZone(zone).toPlainTime().toString().slice(0, 8)}</li>
+	{/each}
+</ul>
+`;
+}
+
+function buildBootstrap(pkgName, isTs) {
+	const tsLine1 = isTs ? `\t// @ts-expect-error - polyfilling globalThis\n` : '';
+	const tsLine2 = isTs ? `\t// @ts-expect-error - patching Date.prototype\n` : '';
+
+	return `${MARKER}
+// Conditionally load the Temporal polyfill when the runtime lacks native support.
+// Native (Chrome 144+, Firefox 139+) keeps zero overhead — the dynamic import is
+// code-split by Vite and only fetched on browsers that need it.
+
+if (typeof globalThis.Temporal === 'undefined') {
+	const { Temporal, toTemporalInstant } = await import('${pkgName}');
+${tsLine1}\tglobalThis.Temporal = Temporal;
+${tsLine2}\tDate.prototype.toTemporalInstant = toTemporalInstant;
+}
+
+export {};
+`;
+}
+
+function buildAppDtsBlock(pkgName) {
+	return `${MARKER}
+import type { Temporal as TemporalNS } from '${pkgName}';
+
+declare global {
+	const Temporal: typeof TemporalNS;
+
+	interface Date {
+		toTemporalInstant(): TemporalNS.Instant;
+	}
+}
+${END_MARKER}`;
+}
+
+function buildNewAppDts(pkgName) {
+	return `// See https://svelte.dev/docs/kit/types#app.d.ts for information about these interfaces
+declare global {
+	namespace App {
+		// interface Error {}
+		// interface Locals {}
+		// interface PageData {}
+		// interface PageState {}
+		// interface Platform {}
+	}
+}
+
+${buildAppDtsBlock(pkgName)}
+
+export {};
+`;
+}
+
+function processAppDts(content, pkgName) {
+	const block = buildAppDtsBlock(pkgName);
+
+	if (content.includes(MARKER)) {
+		const pattern = new RegExp(
+			`${escapeRegex(MARKER)}[\\s\\S]*?${escapeRegex(END_MARKER)}\\n?`,
+			'm'
+		);
+		const replaced = content.replace(pattern, `${block}\n`);
+		return replaced === content ? false : replaced;
+	}
+
+	const exportMatch = content.match(/\n\s*export\s*\{\s*\};?\s*$/);
+	if (exportMatch) {
+		return content.replace(exportMatch[0], `\n\n${block}\n${exportMatch[0]}`);
+	}
+	return `${content.trimEnd()}\n\n${block}\n\nexport {};\n`;
+}
+
+function escapeRegex(s) {
+	return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
