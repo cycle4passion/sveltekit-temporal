@@ -56,7 +56,7 @@ After running, reference `Temporal` directly anywhere — no imports needed and 
 
 ## Server hooks (only if needed)
 
-If you use Temporal inside `hooks.server.ts` or `+server.ts` endpoints that might run before any layout, uncomment the import there as well:
+If you use Temporal inside `hooks.server.ts` or `+server.ts` endpoints that might run before any layout, manully add the import there as well:
 
 ```ts
 import '$lib/temporal';
