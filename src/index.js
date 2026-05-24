@@ -175,13 +175,13 @@ function detectPackageManager(cwd) {
 function installCommand(pm, pkg) {
 	switch (pm) {
 		case 'pnpm':
-			return `pnpm add ${pkg}`;
+			return `pnpm add -D ${pkg}`;
 		case 'yarn':
-			return `yarn add ${pkg}`;
+			return `yarn add -D ${pkg}`;
 		case 'bun':
-			return `bun add ${pkg}`;
+			return `bun add -D ${pkg}`;
 		default:
-			return `npm install ${pkg}`;
+			return `npm install --save-dev ${pkg}`;
 	}
 }
 

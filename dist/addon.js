@@ -103,7 +103,7 @@ var addon_default = defineAddon({
     const pkgName = options2.polyfill;
     const isTs = language === "ts";
     const ext = language;
-    sv.dependency(pkgName, "latest");
+    sv.devDependency(pkgName, "latest");
     sv.file(`${directory.lib}/temporal.${ext}`, (content) => {
       if (content && !content.includes(MARKER)) return false;
       return buildBootstrap(pkgName, isTs);
