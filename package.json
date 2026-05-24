@@ -2,7 +2,7 @@
 	"name": "sveltekit-temporal",
 	"author": "Scott Rhamy",
 	"license": "MIT",
-	"version": "0.9.1",
+	"version": "1.0.1",
 	"description": "sv add-on that wires the Temporal API polyfill into a SvelteKit project with conditional loading on client and server.",
 	"type": "module",
 	"exports": {
