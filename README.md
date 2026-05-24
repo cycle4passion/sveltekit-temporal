@@ -1,15 +1,13 @@
 # sveltekit-temporal
 
-Think about it, temporal may be supported in big 3 browsers soon, but your users may not update for some time.
+Temporal may soon be supported in big 3 browsers, but your users may not update for some time.
 
-This One-shot CLI that wires the Temporal API polyfill into a SvelteKit project, with conditional loading so browsers that ship Temporal natively (Chrome 144+, Firefox 139+) and server runtimes that do too (Node.js 26+) pay zero bytes.
+This one-shot CLI wires the Temporal API polyfill into a SvelteKit project, with conditional loading so browsers that ship Temporal natively (Chrome 144+, Firefox 139+) and server runtimes that do too (Node.js 26+) pay zero bytes.
 
 
 ## Usage
 
-## Using with the Svelte CLI (`sv add`)
-
-This package also works as an `sv` add-on:
+## Using with the Svelte CLI
 
 ```bash
 # When creating a new project
@@ -33,7 +31,6 @@ Run it inside a SvelteKit project. It will:
 5. Create / update the following files:
    - `src/lib/temporal.{ts,js}` — the conditional bootstrap module.
    - `src/routes/+layout.{ts,js}` — prepends `import '$lib/temporal'` (preserves existing content).
-   - `src/hooks.server.{ts,js}` — add commented out example import for server-side.
    - `src/app.d.ts` — adds global `Temporal` type and `Date.toTemporalInstant()` augmentation (TypeScript only).
 
 ## Idempotency
@@ -61,9 +58,8 @@ After running, reference `Temporal` directly anywhere — no imports needed and 
 
 If you use Temporal inside `hooks.server.ts` or `+server.ts` endpoints that might run before any layout, uncomment the import there as well:
 
-`src/hooks.server.ts`:
 ```ts
-// import '$lib/temporal';
+import '$lib/temporal';
 
 export async function handle({ event, resolve }) {
 	return resolve(event);

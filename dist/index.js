@@ -805,8 +805,6 @@ async function run() {
   writeManaged(bootstrapPath, bootstrapContents, { created, updated, skipped });
   const layoutPath = join(cwd, "src", "routes", `+layout.${ext}`);
   ensureImportInFile(layoutPath, "import '$lib/temporal';", { created, updated, skipped });
-  const hooksPath = join(cwd, "src", `hooks.server.${ext}`);
-  ensureImportInFile(hooksPath, "// import '$lib/temporal';", { created, updated, skipped });
   if (isTypeScript) {
     const dtsPath = join(cwd, "src", "app.d.ts");
     updateAppDts(dtsPath, polyfill.pkg, { created, updated, skipped });

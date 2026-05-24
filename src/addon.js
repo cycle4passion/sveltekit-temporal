@@ -40,12 +40,6 @@ export default defineAddon({
 				: `import '$lib/temporal';\n${content}`
 		);
 
-		sv.file(`${directory.src}/hooks.server.${ext}`, (content) =>
-			content.includes("import '$lib/temporal'")
-				? false
-				: `// import '$lib/temporal';\n${content}`
-		);
-
 		if (isTs) {
 			sv.file(`${directory.src}/app.d.ts`, (content) =>
 				content.trim() ? processAppDts(content, pkgName) : buildNewAppDts(pkgName)

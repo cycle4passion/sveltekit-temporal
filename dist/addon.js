@@ -113,11 +113,6 @@ var addon_default = defineAddon({
       (content) => content.includes("import '$lib/temporal'") ? false : `import '$lib/temporal';
 ${content}`
     );
-    sv.file(
-      `${directory.src}/hooks.server.${ext}`,
-      (content) => content.includes("import '$lib/temporal'") ? false : `// import '$lib/temporal';
-${content}`
-    );
     if (isTs) {
       sv.file(
         `${directory.src}/app.d.ts`,

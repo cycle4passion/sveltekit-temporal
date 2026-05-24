@@ -103,11 +103,7 @@ export async function run() {
 	const layoutPath = join(cwd, 'src', 'routes', `+layout.${ext}`);
 	ensureImportInFile(layoutPath, "import '$lib/temporal';", { created, updated, skipped });
 
-	// 5c. src/hooks.server.{ts,js} — preserve existing content, add commented import hint
-	const hooksPath = join(cwd, 'src', `hooks.server.${ext}`);
-	ensureImportInFile(hooksPath, "// import '$lib/temporal';", { created, updated, skipped });
-
-	// 5d. app.d.ts (TypeScript only)
+	// 5c. app.d.ts (TypeScript only)
 	if (isTypeScript) {
 		const dtsPath = join(cwd, 'src', 'app.d.ts');
 		updateAppDts(dtsPath, polyfill.pkg, { created, updated, skipped });
